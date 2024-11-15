@@ -47,7 +47,7 @@ jobs:
       - name: Build and Push to ECR
         run: |
           # ECR 리포지토리 URI 설정
-          REPOSITORY_URI=641022061021.dkr.ecr.ap-northeast-2.amazonaws.com/cicd
+          REPOSITORY_URI=615299736609.dkr.ecr.ap-northeast-2.amazonaws.com/cicd
           
           # Docker 이미지 빌드
           docker build -t $REPOSITORY_URI:latest .
