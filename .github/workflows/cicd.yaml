@@ -8,6 +8,10 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: cicd
+
 jobs:
   build-and-deploy-to-ecr:
     runs-on: ubuntu-latest
@@ -26,7 +30,7 @@ jobs:
 
       # Spring Boot Application Build
       - name: Build with Gradle
-        uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+        uses: gradle/gradle-build-action@v2
         with:
           arguments: clean bootJar
 
@@ -36,7 +40,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::615299736609:role/cicd
           role-session-name: cicdSession
-          aws-region: ap-northeast-2
+          aws-region: ${{ env.AWS_REGION }}
 
       # ECR 로그인
       - name: Login to Amazon ECR
@@ -44,13 +48,17 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       # 이미지 빌드 및 푸시
-      - name: Build and Push to ECR
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          # ECR 리포지토리 URI 설정
-          REPOSITORY_URI=615299736609.dkr.ecr.ap-northeast-2.amazonaws.com/cicd
-          
           # Docker 이미지 빌드
-          docker build -t $REPOSITORY_URI:latest .
-          
+          docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+
           # ECR에 이미지 푸시
-          docker push $REPOSITORY_URI:latest
+          docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+
+          # 푸시된 이미지 정보 출력
+          echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
