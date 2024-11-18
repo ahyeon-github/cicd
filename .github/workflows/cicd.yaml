@@ -77,19 +77,3 @@ jobs:
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ env.image }}
 
-      # ECS 서비스 업데이트
-      - name: Deploy to ECS
-        run: |
-          # 최신 태스크 정의 등록
-          TASK_REVISION=$(aws ecs register-task-definition \
-            --cli-input-json file://${{ env.TASK_DEFINITION_FILE }} \
-            --query 'taskDefinition.taskDefinitionArn' --output text)
-          
-          echo "Task Revision: $TASK_REVISION"
-
-          # ECS 서비스 업데이트
-          aws ecs update-service \
-            --cluster ${{ env.CLUSTER_NAME }} \
-            --service ${{ env.SERVICE_NAME }} \
-            --task-definition $TASK_REVISION \
-            --force-new-deployment
