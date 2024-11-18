@@ -10,7 +10,11 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: cicd
+  CLUSTER_NAME: ECS-CICD-Cluster
+  SERVICE_NAME: ecs-cicd-nginxservice
+  TASK_FAMILY: ECS-CICD-Cluster-NginX-Task
+  CONTAINER_NAME: ECS-CICD-Cluster-NginX-Container
+  TASK_DEFINITION_FILE: ./ECS-CICD-Cluster-NginX-Task-revision3.json
 
 jobs:
   build-and-deploy-to-ecr:
@@ -41,10 +45,12 @@ jobs:
           role-to-assume: arn:aws:iam::615299736609:role/cicd
           role-session-name: cicdSession
           aws-region: ${{ env.AWS_REGION }}
+
       # ECR 로그인
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+
       # 이미지 빌드 및 푸시
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
@@ -59,4 +65,30 @@ jobs:
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
 
           # 푸시된 이미지 정보 출력
-          echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_ENV
+
+      # 태스크 정의 수정
+      - name: Update ECS Task Definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.TASK_DEFINITION_FILE }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ env.image }}
+
+      # ECS 서비스 업데이트
+      - name: Deploy to ECS
+        run: |
+          # 최신 태스크 정의 등록
+          TASK_REVISION=$(aws ecs register-task-definition \
+            --cli-input-json file://${{ env.TASK_DEFINITION_FILE }} \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          
+          echo "Task Revision: $TASK_REVISION"
+
+          # ECS 서비스 업데이트
+          aws ecs update-service \
+            --cluster ${{ env.CLUSTER_NAME }} \
+            --service ${{ env.SERVICE_NAME }} \
+            --task-definition $TASK_REVISION \
+            --force-new-deployment
