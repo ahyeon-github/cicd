@@ -10,6 +10,7 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: cicd
   CLUSTER_NAME: ECS-CICD-Cluster
   SERVICE_NAME: ecs-cicd-nginxservice
   TASK_FAMILY: ECS-CICD-Cluster-NginX-Task
