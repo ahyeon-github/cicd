@@ -15,7 +15,7 @@ env:
   SERVICE_NAME: ecs-cicd-nginxservice
   TASK_FAMILY: ECS-CICD-Cluster-NginX-Task
   CONTAINER_NAME: ECS-CICD-Cluster-NginX-Container
-  TASK_DEFINITION_FILE: ./ECS-CICD-Cluster-NginX-Task-revision3.json
+  TASK_DEFINITION_FILE: ./task-definition.json
 
 jobs:
   build-and-deploy-to-ecr:
