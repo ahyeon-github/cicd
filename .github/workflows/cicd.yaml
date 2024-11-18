@@ -41,12 +41,10 @@ jobs:
           role-to-assume: arn:aws:iam::615299736609:role/cicd
           role-session-name: cicdSession
           aws-region: ${{ env.AWS_REGION }}
-
       # ECR 로그인
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-
       # 이미지 빌드 및 푸시
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
